@@ -21,7 +21,7 @@ def main():
     dst_mac = st.text_input("Destination MAC Address", "00:1B:44:11:3A:C8")
     src_ip = st.text_input("Source IP Address", "192.168.1.2")
     dst_ip = st.text_input("Destination IP Address", "192.168.1.10")
-    protocol = st.selectbox("Protocol", ["TCP", "UDP", "ICMP"])
+    protocol = st.selectbox("Protocol", ["6", "1", "17", "ARP"])
 
     if st.button("Predict"):
         inputs = {
@@ -29,7 +29,7 @@ def main():
             "dst_mac": dst_mac.strip(),
             "src_ip": src_ip.strip(),
             "dst_ip": dst_ip.strip(),
-            "protocol": protocol.strip().upper()
+            "protocol": protocol.strip()
         }
 
         try:

@@ -31,13 +31,19 @@ def get_mitigation_strategy(attack_type):
         4. Deploy ARP monitoring tools
         5. Implement MAC address binding
         """,
-        "Flow Table Exhaustion": """
-        ### 🛡️ Flow Table Exhaustion Mitigation Strategies:
-        1. Implement flow table size limits
-        2. Use aggressive flow timeouts
-        3. Deploy flow table monitoring
-        4. Implement flow table cleanup policies
-        5. Use flow table compression techniques
+        
+        "flow_table_attack": """
+        ### 🛡️ Flow Table Attack Mitigation Strategies:
+        1. Implement flow table size limits per switch
+        2. Enable flow table monitoring and alerts
+        3. Deploy flow table cleanup policies
+        4. Use flow table compression techniques
+        5. Implement flow entry timeouts
+        6. Deploy flow table backup mechanisms
+        7. Use flow table aggregation where possible
+        8. Implement flow table overflow protection
+        9. Enable flow table statistics collection
+        10. Deploy flow table load balancing
         """
     }
     return strategies.get(attack_type.lower(), "Unknown attack type. No specific mitigation strategy available.")

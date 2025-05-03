@@ -15,16 +15,16 @@ def load_artifacts(model_name):
 def get_mitigation_strategy(attack_type):
     strategies = {
         "normal traffic": "No mitigation required. Network traffic appears normal.",
-        "DoS attack": """
-        ### 🛡️ DoS Attack Mitigation Strategies:
+        "dos": """
+        🛡️ DoS Attack Mitigation Strategies:
         1. Implement rate limiting on the controller
         2. Deploy traffic filtering rules
         3. Use SYN cookies for TCP connections
         4. Enable flow table timeouts
         5. Deploy backup controllers
         """,
-        "ARP spoofing": """
-        ### 🛡️ ARP Spoofing Mitigation Strategies:
+        "arp_spoof": """
+        🛡️ ARP Spoofing Mitigation Strategies:
         1. Implement ARP inspection
         2. Use static ARP entries for critical devices
         3. Enable port security
@@ -33,7 +33,7 @@ def get_mitigation_strategy(attack_type):
         """,
         
         "flow_table_attack": """
-        ### 🛡️ Flow Table Attack Mitigation Strategies:
+        🛡️ Flow Table Attack Mitigation Strategies:
         1. Implement flow table size limits per switch
         2. Enable flow table monitoring and alerts
         3. Deploy flow table cleanup policies

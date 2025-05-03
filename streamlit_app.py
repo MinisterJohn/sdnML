@@ -12,6 +12,36 @@ def load_artifacts(model_name):
         "label_encoders": joblib.load("label_encoders.pkl")
     }
 
+def get_mitigation_strategy(attack_type):
+    strategies = {
+        "normal traffic": "No mitigation required. Network traffic appears normal.",
+        "DoS attack": """
+        ### 🛡️ DoS Attack Mitigation Strategies:
+        1. Implement rate limiting on the controller
+        2. Deploy traffic filtering rules
+        3. Use SYN cookies for TCP connections
+        4. Enable flow table timeouts
+        5. Deploy backup controllers
+        """,
+        "ARP spoofing": """
+        ### 🛡️ ARP Spoofing Mitigation Strategies:
+        1. Implement ARP inspection
+        2. Use static ARP entries for critical devices
+        3. Enable port security
+        4. Deploy ARP monitoring tools
+        5. Implement MAC address binding
+        """,
+        "Flow Table Exhaustion": """
+        ### 🛡️ Flow Table Exhaustion Mitigation Strategies:
+        1. Implement flow table size limits
+        2. Use aggressive flow timeouts
+        3. Deploy flow table monitoring
+        4. Implement flow table cleanup policies
+        5. Use flow table compression techniques
+        """
+    }
+    return strategies.get(attack_type.lower(), "Unknown attack type. No specific mitigation strategy available.")
+
 def preprocess_input(inputs, artifacts):
     # Create a DataFrame with the same structure as training data
     df = pd.DataFrame([inputs])
@@ -60,6 +90,13 @@ def main():
             border-radius: 5px;
             background-color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .mitigation-box {
+            background-color: #fff3cd;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+            border-left: 4px solid #ffc107;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -120,12 +157,13 @@ def main():
                 # Make prediction
                 prediction = artifacts["model"].predict(processed_input)
                 predicted_label = artifacts["label_encoders"]["label"].inverse_transform(prediction)
+                attack_type = predicted_label[0]
 
                 # Display prediction with appropriate styling
-                if "attack" in predicted_label[0].lower():
-                    st.error(f"⚠️ Warning: {predicted_label[0]}")
+                if "normal" in attack_type.lower():
+                    st.success(f"✅ Status: {attack_type}")
                 else:
-                    st.success(f"✅ Status: {predicted_label[0]}")
+                    st.error(f"⚠️ Warning: {attack_type} Detected!")
                 
                 # Add some visual feedback
                 st.markdown("---")
@@ -135,6 +173,11 @@ def main():
                 - Destination: {dst_ip} ({dst_mac})
                 - Protocol: {protocol}
                 """)
+                
+                # Display mitigation strategies
+                st.markdown("---")
+                st.markdown("### Mitigation Strategy")
+                st.markdown(f'<div class="mitigation-box">{get_mitigation_strategy(attack_type)}</div>', unsafe_allow_html=True)
                 
             except ValueError as e:
                 st.error(f"❌ Error: {str(e)}")

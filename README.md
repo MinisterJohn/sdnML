@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SDN Attack Detection and Mitigation System
 
 A machine learning-based system for detecting and mitigating attacks on Software Defined Networking (SDN) controllers. This application uses a Random Forest model to analyze network packet features and identify potential security threats.
@@ -69,3 +70,6 @@ This application can be deployed on Streamlit Cloud. Simply push your code to a 
 ## Contact
 
 [Add your contact information here] 
+=======
+# sdnML
+>>>>>>> 9751d1f675dc7543d9174e717694cc07b6f5c38d

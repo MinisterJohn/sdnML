@@ -1,6 +1,8 @@
 import streamlit as st
 import joblib
 import numpy as np
+import pandas as pd
+from PIL import Image
 
 @st.cache_resource
 def load_artifacts(model_name):
@@ -10,45 +12,156 @@ def load_artifacts(model_name):
         "label_encoders": joblib.load("label_encoders.pkl")
     }
 
-def main():
-    st.title("📡 Machine Learning-Based Detection and Mitigation of Attacks on Software Defined Networking (SDN) Controllers")
+def preprocess_input(inputs, artifacts):
+    # Create a DataFrame with the same structure as training data
+    df = pd.DataFrame([inputs])
+    
+    # Apply label encoding to categorical features
+    for feature in ["src_mac", "dst_mac", "src_ip", "dst_ip", "protocol"]:
+        le = artifacts["label_encoders"][feature]
+        df[feature] = le.transform(df[feature])
+    
+    # Scale the features
+    feature_order = ["src_mac", "dst_mac", "src_ip", "dst_ip", "protocol"]
+    scaled_features = artifacts["scaler"].transform(df[feature_order])
+    
+    return scaled_features
 
+def main():
+    # Set page config
+    st.set_page_config(
+        page_title="SDN Attack Detection",
+        page_icon="🛡️",
+        layout="wide"
+    )
+
+    # Load artifacts
     artifacts = load_artifacts("RandomForest_best_model.pkl")
 
-    st.subheader("Enter Network Packet Features:")
-
-    src_mac = st.text_input("Source MAC Address", "00:1B:44:11:3A:B7")
-    dst_mac = st.text_input("Destination MAC Address", "00:1B:44:11:3A:C8")
-    src_ip = st.text_input("Source IP Address", "192.168.1.2")
-    dst_ip = st.text_input("Destination IP Address", "192.168.1.10")
-    protocol = st.selectbox("Protocol", ["6", "1", "17", "ARP"])
-
-    if st.button("Predict"):
-        inputs = {
-            "src_mac": src_mac.strip(),
-            "dst_mac": dst_mac.strip(),
-            "src_ip": src_ip.strip(),
-            "dst_ip": dst_ip.strip(),
-            "protocol": protocol.strip()
+    # Custom CSS
+    st.markdown("""
+        <style>
+        .main {
+            background-color: #f5f5f5;
         }
+        .stButton>button {
+            width: 100%;
+            border-radius: 5px;
+            height: 3em;
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        .stTextInput>div>div>input {
+            border-radius: 5px;
+        }
+        .css-1d391kg {
+            padding: 1rem;
+            border-radius: 5px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-        try:
-            for key in ["src_mac", "dst_mac", "src_ip", "dst_ip", "protocol"]:
-                le = artifacts["label_encoders"][key]
-                inputs[key] = le.transform([inputs[key]])[0]
+    # Sidebar
+    with st.sidebar:
+        st.title("About")
+        st.markdown("""
+        This application uses machine learning to detect and mitigate attacks on SDN controllers.
+        
+        ### Features
+        - Real-time attack detection
+        - Multiple protocol support
+        - Pre-trained model
+        """)
+        
+        st.markdown("---")
+        st.markdown("### Protocol Codes")
+        st.markdown("""
+        - 6: TCP
+        - 1: ICMP
+        - 17: UDP
+        - ARP: Address Resolution Protocol
+        """)
 
-            # Prepare and scale input
-            feature_order = ["src_mac", "dst_mac", "src_ip", "dst_ip", "protocol"]
-            user_input = np.array([[inputs[feat] for feat in feature_order]])
-            user_input_scaled = artifacts["scaler"].transform(user_input)
+    # Main content
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.title("🛡️ SDN Attack Detection System")
+        st.markdown("### Enter Network Packet Features")
+        
+        # Create two columns for input fields
+        col_a, col_b = st.columns(2)
+        
+        with col_a:
+            src_mac = st.text_input("Source MAC Address", "00:1B:44:11:3A:B7")
+            dst_mac = st.text_input("Destination MAC Address", "00:1B:44:11:3A:C8")
+            protocol = st.selectbox("Protocol", ["6", "1", "17", "ARP"])
+        
+        with col_b:
+            src_ip = st.text_input("Source IP Address", "192.168.1.2")
+            dst_ip = st.text_input("Destination IP Address", "192.168.1.10")
+        
+        if st.button("🔍 Analyze Network Traffic"):
+            inputs = {
+                "src_mac": src_mac.strip(),
+                "dst_mac": dst_mac.strip(),
+                "src_ip": src_ip.strip(),
+                "dst_ip": dst_ip.strip(),
+                "protocol": protocol.strip()
+            }
 
-            # Predict
-            prediction = artifacts["model"].predict(user_input_scaled)
-            predicted_label = artifacts["label_encoders"]["label"].inverse_transform(prediction)
+            try:
+                # Preprocess the input features
+                processed_input = preprocess_input(inputs, artifacts)
+                
+                # Make prediction
+                prediction = artifacts["model"].predict(processed_input)
+                predicted_label = artifacts["label_encoders"]["label"].inverse_transform(prediction)
 
-            st.success(f"✅ Predicted Label: {predicted_label[0]}")
-        except ValueError as e:
-            st.error(f"❌ Invalid input: {e}")
+                # Display prediction with appropriate styling
+                if "attack" in predicted_label[0].lower():
+                    st.error(f"⚠️ Warning: {predicted_label[0]}")
+                else:
+                    st.success(f"✅ Status: {predicted_label[0]}")
+                
+                # Add some visual feedback
+                st.markdown("---")
+                st.markdown("### Analysis Details")
+                st.markdown(f"""
+                - Source: {src_ip} ({src_mac})
+                - Destination: {dst_ip} ({dst_mac})
+                - Protocol: {protocol}
+                """)
+                
+            except ValueError as e:
+                st.error(f"❌ Error: {str(e)}")
+
+    with col2:
+        st.markdown("### Network Traffic Flow")
+        st.markdown("""
+        ```
+        Source → Protocol → Destination
+        {} → {} → {}
+        ```
+        """.format(src_ip, protocol, dst_ip))
+        
+        # Add a simple network diagram using markdown
+        st.markdown("""
+        <div style="text-align: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px;">
+                <div style="width: 40px; height: 40px; background-color: #4CAF50; border-radius: 50%;"></div>
+                <div style="width: 100px; height: 2px; background-color: #2196F3;"></div>
+                <div style="width: 40px; height: 40px; background-color: #FF5252; border-radius: 50%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0 20px;">
+                <span>Source</span>
+                <span>Destination</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
